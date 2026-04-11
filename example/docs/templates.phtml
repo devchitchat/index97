@@ -1,0 +1,63 @@
+<template data-slot="title">Templates — index97</template>
+<template data-slot="sidebar">
+<include src="docs/_sidebar.phtml">
+</template>
+
+<div class="docs-content">
+  <span class="section-label">Reference</span>
+  <h1 class="gradient-text">Templates</h1>
+  <p class="lead">Handlebars-inspired syntax. No compilers, no build step, no surprises.</p>
+
+  <h2>The essentials</h2>
+
+<pre><code>&lt;!-- Escaped output (safe) --&gt;
+&lt;p&gt;{{<span>u</span>ser.name}}&lt;/p&gt;
+
+&lt;!-- Raw HTML output (trusted content only) --&gt;
+&lt;div&gt;{{{<span></span>markdownBody}}}&lt;/div&gt;
+
+&lt;!-- Conditional --&gt;
+{{<span></span>#if isAdmin}}
+  &lt;a href="/admin"&gt;Admin&lt;/a&gt;
+{{<span></span>/if}}
+
+{{<span></span>#unless loggedIn}}
+  &lt;a href="/signin"&gt;Sign in&lt;/a&gt;
+{{<span></span>unless}}
+
+&lt;!-- Loop --&gt;
+&lt;ul&gt;
+{{<span></span>#each posts}}
+  &lt;li&gt;&lt;a href="/blog/{{<span></span>slug}}"&gt;{{<span></span>title}}&lt;/a&gt;&lt;/li&gt;
+{{<span></span>/each}}
+&lt;/ul&gt;
+
+&lt;!-- Boolean negation --&gt;
+&lt;input type="checkbox" {{<span></span>!done}}&gt;</code></pre>
+
+  <h2>Data comes from your handler</h2>
+  <p>Your <code>.js</code> handler returns a plain object. Every key on that object is available as a template variable.</p>
+
+<pre><code>// blog/[slug].js
+export async function GET(req) {
+  const post = getPost(req.params.slug)
+  return { post, isAdmin: true }
+}
+
+&lt;!-- blog/[slug].phtml --&gt;
+&lt;h1&gt;{{<span></span>post.title}}&lt;/h1&gt;
+{{<span></span>#if isAdmin}}&lt;a href="/edit"&gt;Edit&lt;/a&gt;{{<span></span>/if}}</code></pre>
+
+  <h2>Inside {{<span></span>#each}}, context switches</h2>
+  <p>Inside an <code>{{<span></span>#each items}}</code> block, the template context becomes each item in the array. If you need outer-scope variables inside a loop, put them on each item in the handler:</p>
+
+<pre><code>// handler
+const items = db.getAll().map(item => ({ ...item, isAdmin }))
+return { items, isAdmin }
+
+&lt;!-- template --&gt;
+{{<span></span>each items}}
+  {{<span></span>title}}
+  {{<span></span>#if isAdmin}}&lt;button&gt;Delete&lt;/button&gt;{{<span></span>/if}}
+{{<span></span>/each}}</code></pre>
+</div>Boolean negation

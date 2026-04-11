@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{slot:title || index97 — Building websites like it's 1997}}</title>
+  <link rel="stylesheet" href="/style.css">
+  {{slot:head}}
+</head>
+<body>
+  <header class="site-header">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <img src="/logo.png" alt="index97">
+      </a>
+      <div class="nav-links">
+        <a href="/docs">Docs</a>
+        <a href="/docs/philosophy">Philosophy</a>
+        <a href="/docs/features">Features</a>
+        <a href="/blog">Blog</a>
+        <a href="/tasks">Tasks</a>
+        {{#unless session}}<a href="/signin">Sign in</a>{{/unless}}
+        {{#unless session}}<a href="/signup">Sign up</a>{{/unless}}
+        {{#if session}}<form method="POST" action="/signout"><button type="submit">Sign out</button></form>{{/if}}
+      </div>
+    </div>
+  </header>
+  <div class="page-wrapper">
+    {{slot:sidebar}}
+    <main>
+      {{content}}
+    </main>
+  </div>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p>Built with <a href="/">index97</a> &nbsp;<span class="sparkle">✦</span>&nbsp; Building websites like it's 1997 &nbsp;<span class="sparkle">✦</span></p>
+    </div>
+  </footer>
+</body>
+</html>

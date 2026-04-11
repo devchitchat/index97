@@ -1,0 +1,25 @@
+<template data-slot="title">Routing — index97</template>
+<template data-slot="sidebar">
+<include src="docs/_sidebar.phtml">
+</template>
+
+<div class="docs-content">
+  <span class="section-label">Reference</span>
+  <h1 class="gradient-text">Routing</h1>
+  <p class="lead">File is route. Route is file.</p>
+
+  <h2>The short version</h2>
+  <ul>
+    <li>Every <code>.phtml</code>, <code>.html</code>, <code>.js</code>, and <code>.md</code> file in your pages directory becomes a route</li>
+    <li>Files starting with <code>_</code> are private and never become routes</li>
+    <li>Wrap a segment in <code>[brackets]</code> for dynamic params — accessible via <code>req.params</code></li>
+    <li>An <code>index</code> file maps to the directory root</li>
+    <li>A <code>.js</code> handler wins over a <code>.html</code> document at the same URL pattern</li>
+    <li>Static files in <code>public/</code> are served directly, bypassing the router</li>
+  </ul>
+
+  <h2>Route discovery order</h2>
+  <p>At startup, index97 scans with <code>Bun.Glob</code> and deduplicates by pattern. Handlers (<code>.js</code>) take precedence over documents (<code>.html</code>) at the same pattern. Among routes of the same kind, the first discovered wins.</p>
+
+  <p>See <a href="/docs/architecture">Architecture</a> for the full request lifecycle.</p>
+</div>

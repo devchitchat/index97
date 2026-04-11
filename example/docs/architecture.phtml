@@ -1,0 +1,129 @@
+<template data-slot="title">Architecture — index97</template>
+<template data-slot="sidebar">
+<include src="docs/_sidebar.phtml">
+</template>
+
+<div class="docs-content">
+  <span class="section-label">Architecture</span>
+  <h1 class="gradient-text">How it all fits together.</h1>
+  <p class="lead">index97 is a small set of cooperating systems. Each one does one thing.</p>
+
+  <h2>File-based routing</h2>
+  <p>At startup, index97 scans your pages directory recursively and builds a route table. Every file with a recognized extension becomes a route.</p>
+
+  <div class="file-tree">
+    <span class="dir">pages/</span>
+    <span class="indent special">_layout.html      <span class="comment">← layout wrapper (not a route)</span></span>
+    <span class="indent special">_layout.js        <span class="comment">← layout data provider (not a route)</span></span>
+    <span class="indent file">index.phtml       <span class="comment">→ GET /</span></span>
+    <span class="indent file">about.phtml       <span class="comment">→ GET /about</span></span>
+    <span class="indent file">contact.html      <span class="comment">→ GET /contact (served as-is)</span></span>
+    <span class="indent dir">blog/</span>
+    <span class="indent2 file">index.js          <span class="comment">→ GET,POST /blog</span></span>
+    <span class="indent2 file">index.phtml       <span class="comment">← template for blog/index.js</span></span>
+    <span class="indent2 dynamic">[slug].js         <span class="comment">→ GET,DELETE /blog/:slug</span></span>
+    <span class="indent2 dynamic">[slug].phtml      <span class="comment">← template for [slug].js</span></span>
+    <span class="indent dir">public/           <span class="comment">← static files, served directly</span></span>
+    <span class="indent2 file">style.css</span>
+  </div>
+
+  <h2>Route types</h2>
+
+  <table class="ref-table">
+    <thead>
+      <tr><th>Extension</th><th>Type</th><th>Behavior</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>.phtml</td>
+        <td><span class="badge badge-blue">page</span></td>
+        <td>Server-rendered template. Optionally paired with a <code>.js</code> sibling for data. Wrapped in the nearest <code>_layout.html</code>.</td>
+      </tr>
+      <tr>
+        <td>.html</td>
+        <td><span class="badge badge-green">document</span></td>
+        <td>Served as a full HTML document. No layout applied. Good for self-contained pages like error pages.</td>
+      </tr>
+      <tr>
+        <td>.js</td>
+        <td><span class="badge badge-pink">handler</span></td>
+        <td>Exports named HTTP method functions. Paired with a <code>.phtml</code> or <code>.html</code> sibling for rendering. Wins over <code>.html</code> at the same pattern.</td>
+      </tr>
+      <tr>
+        <td>.md</td>
+        <td><span class="badge badge-yellow">markdown</span></td>
+        <td>Rendered via Bun's built-in markdown renderer. YAML front matter maps keys to layout slots.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Naming conventions</h2>
+
+  <table class="ref-table">
+    <thead>
+      <tr><th>Pattern</th><th>Meaning</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>_filename</td><td>Private — not a route. Used for layouts, auth helpers, DB modules, partials.</td></tr>
+      <tr><td>[param]</td><td>Dynamic segment — matches any URL segment, available as <code>req.params.param</code>.</td></tr>
+      <tr><td>index</td><td>Maps to the directory root (<code>/blog/index.phtml</code> → <code>/blog</code>).</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Request lifecycle</h2>
+  <p>For a handler route (<code>.js</code> with a <code>.phtml</code> template):</p>
+  <ol>
+    <li>Request arrives at <code>Bun.serve()</code></li>
+    <li><code>resolveMethod()</code> checks for <code>_method</code> form field and rewrites the method</li>
+    <li>The exported handler function (<code>GET</code>, <code>POST</code>, etc.) is called with the request</li>
+    <li>If it returns a plain object, the object is merged with the <code>.phtml</code> template via <code>render()</code>, and the data is retained</li>
+    <li><code>resolveIncludes()</code> processes any <code>&lt;include&gt;</code> tags in the rendered HTML, with the handler's data available for <code>@key</code> attribute references</li>
+    <li><code>findLayout()</code> walks up directories to find the nearest <code>_layout.html</code></li>
+    <li><code>applyLayout()</code> extracts named slots and injects content into the layout</li>
+    <li>If a <code>_layout.js</code> exists, its <code>data(req)</code> is called and the result renders layout-level variables</li>
+    <li><code>rewriteFormMethods()</code> converts non-standard form methods to POST + hidden <code>_method</code> field</li>
+    <li>In dev mode, the HMR script is injected</li>
+    <li>The final HTML is returned as a <code>Response</code></li>
+  </ol>
+
+  <h2>Layout system</h2>
+  <p><code>_layout.html</code> acts as a wrapper for all pages in its directory and subdirectories. index97 walks up from the current page's directory until it finds one (or reaches the pages root).</p>
+  <p>Pages populate layout slots using <code>&lt;template data-slot="name"&gt;</code> elements. The layout references them with <code>{{slot:name || default value}}</code>.</p>
+  <p>A sibling <code>_layout.js</code> can export <code>data(req)</code> to provide request-aware data to the layout itself — used for things like session-aware navigation.</p>
+
+  <h2>Partials system</h2>
+  <p>The <code>&lt;include src="partial.phtml"&gt;</code> tag includes server-side partials. Data is passed explicitly via attributes. The parent's data context — whether from a <code>.phtml</code> page handler or a <code>.js</code> route handler — is always available for <code>@key</code> resolution:</p>
+
+  <table class="ref-table">
+    <thead>
+      <tr><th>Syntax</th><th>Meaning</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>attr="@key"</code></td><td>Pass <code>data.key</code> from the parent context (the <code>@</code> sigil resolves from parent data)</td></tr>
+      <tr><td><code>attr="literal"</code></td><td>Pass the string <code>"literal"</code> as a value</td></tr>
+      <tr><td>(no attrs)</td><td>The partial inherits the full parent data context</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Error pages</h2>
+  <p>index97 looks for error pages by walking up from the failing route's directory:</p>
+  <ul>
+    <li>404 errors → <code>_404.html</code></li>
+    <li>All other errors → <code>_error.html</code></li>
+  </ul>
+  <p>This means a <code>/blog/_404.html</code> handles 404s within the blog section, while the root <code>/_404.html</code> catches everything else. Error pages receive <code>{{<span></span>status}}</code>, <code>{{<span></span>title}}</code>, and <code>{{<span></span>message}}</code> variables.</p>
+
+  <h2>Hot reload</h2>
+  <p>In dev mode, index97 watches the pages directory with Bun's file watcher. Changes are broadcast to connected browsers via SSE at <code>/__index97_hmr</code>. The injected client script handles two cases:</p>
+  <ul>
+    <li><strong>CSS changes</strong> — re-stamps the <code>&lt;link&gt;</code> href with a <code>?t=timestamp</code> query string, forcing the browser to re-fetch the stylesheet with no page reload and no scroll reset.</li>
+    <li><strong>All other changes</strong> — fetches the updated page HTML, parses it with <code>DOMParser</code>, then morphs the live DOM in place. Attributes, text nodes, and child elements are patched recursively. No full page reload, no lost state.</li>
+  </ul>
+
+  <h2>Form method override</h2>
+  <p>HTML forms only natively support GET and POST. index97 provides two-way method override:</p>
+  <ul>
+    <li><strong>Server rendering:</strong> <code>&lt;form method="DELETE"&gt;</code> is rewritten to <code>method="POST"</code> with a hidden <code>&lt;input name="_method" value="DELETE"&gt;</code></li>
+    <li><strong>Request handling:</strong> <code>resolveMethod()</code> reads the <code>_method</code> field and constructs a new <code>Request</code> with the correct HTTP method before dispatching to the handler</li>
+  </ul>
+</div>

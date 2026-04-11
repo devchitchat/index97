@@ -1,0 +1,137 @@
+<template data-slot="title">Quick Start — index97</template>
+<template data-slot="sidebar">
+<include src="docs/_sidebar.phtml">
+</template>
+
+<div class="docs-content">
+  <span class="section-label">Getting Started</span>
+  <h1 class="gradient-text">Quick Start</h1>
+  <p class="lead">From zero to a running server in under 5 minutes.</p>
+
+  <h2>Prerequisites</h2>
+  <p>You need <a href="https://bun.sh">Bun</a> installed. That's the only dependency.</p>
+
+<pre><code>curl -fsSL https://bun.sh/install | bash</code></pre>
+
+  <h2>1. Create your project</h2>
+  <p>Make a folder and initialize it:</p>
+
+<pre><code>mkdir my-site && cd my-site
+bun init -y
+bun add index97</code></pre>
+
+  <h2>2. Create the server entry point</h2>
+  <p>Create <code>server.js</code>:</p>
+
+<pre><code>import { createServer } from 'index97'
+
+createServer({
+  pagesDir: './pages',
+  port: 3000,
+  dev: true
+})</code></pre>
+
+  <h2>3. Create your first layout</h2>
+  <p>Create <code>pages/_layout.html</code>:</p>
+
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+  &lt;title&gt;{{<span></span>slot:title || My Site}}&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;nav&gt;&lt;a href="/"&gt;Home&lt;/a&gt;&lt;/nav&gt;
+  &lt;main&gt;{{<span></span>content}}&lt;/main&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+  <h2>4. Create your home page</h2>
+  <p>Create <code>pages/index.phtml</code>:</p>
+
+<pre><code>&lt;template data-slot="title"&gt;Welcome — My Site&lt;/template&gt;
+
+&lt;h1&gt;Hello, world!&lt;/h1&gt;
+&lt;p&gt;Building websites like it's 1997.&lt;/p&gt;</code></pre>
+
+  <h2>5. Run it</h2>
+
+<pre><code>bun server.js</code></pre>
+
+  <p>Open <a href="http://localhost:3000">http://localhost:3000</a>. Your page renders inside the layout automatically.</p>
+
+  <div class="callout">
+    <strong>Hot reload is on.</strong> With <code>dev: true</code>, any file change instantly updates the browser. CSS changes re-stamp without a full reload.
+  </div>
+
+  <h2>6. Add a handler</h2>
+  <p>Pair a <code>.js</code> file with your <code>.phtml</code> to provide data. Create <code>pages/hello.js</code>:</p>
+
+<pre><code>export async function GET(req) {
+  const name = new URL(req.url).searchParams.get('name') ?? 'world'
+  return { name }
+}</code></pre>
+
+  <p>And <code>pages/hello.phtml</code>:</p>
+
+<pre><code>&lt;template data-slot="title"&gt;Hello — My Site&lt;/template&gt;
+
+&lt;h1&gt;Hello, {{<span></span>name}}!&lt;/h1&gt;</code></pre>
+
+  <p>Visit <code>/hello?name=Joey</code> — the handler fetches data, the template renders it.</p>
+
+  <h2>7. Add a dynamic route</h2>
+  <p>Create <code>pages/posts/[slug].js</code>:</p>
+
+<pre><code>const posts = {
+  'hello-world': { title: 'Hello World', body: 'My first post.' }
+}
+
+export async function GET(req) {
+  const post = posts[req.params.slug]
+  if (!post) return new Response('', { status: 404 })
+  return { post }
+}</code></pre>
+
+  <p>And <code>pages/posts/[slug].phtml</code>:</p>
+
+<pre><code>&lt;h1&gt;{{<span></span>post.title}}&lt;/h1&gt;
+&lt;p&gt;{{<span></span>post.body}}&lt;/p&gt;</code></pre>
+
+  <p>Visit <code>/posts/hello-world</code>. The <code>slug</code> parameter is available via <code>req.params.slug</code>.</p>
+
+  <h2>8. Build a static site</h2>
+  <p>For dynamic routes, export <code>staticPaths()</code> to tell the builder which URLs to generate:</p>
+
+<pre><code>// posts/[slug].js
+const posts = {
+  'hello-world': { title: 'Hello World', body: 'My first post.' }
+}
+
+export async function GET(req) {
+  const post = posts[req.params.slug]
+  if (!post) return new Response('', { status: 404 })
+  return { post }
+}
+
+export async function staticPaths() {
+  return Object.keys(posts).map(slug => ({ slug }))
+}</code></pre>
+
+  <p>Then run the build:</p>
+
+<pre><code>index97 build ./pages</code></pre>
+
+  <p>Static assets from <code>public/</code> are copied automatically. Output goes to <code>dist/</code> by default:</p>
+
+<pre><code>index97 build ./pages --out ./output</code></pre>
+
+  <h2>Next steps</h2>
+  <ul>
+    <li><a href="/docs/architecture">Architecture</a> — understand the full routing system</li>
+    <li><a href="/docs/templates">Templates</a> — all the template syntax</li>
+    <li><a href="/docs/layouts">Layouts</a> — named slots, defaults, layout data</li>
+    <li><a href="/docs/features">Features</a> — forms, partials, error pages, hot reload, CLI</li>
+  </ul>
+</div>

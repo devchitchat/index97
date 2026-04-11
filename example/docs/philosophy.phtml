@@ -1,0 +1,58 @@
+<template data-slot="title">Philosophy — index97</template>
+<template data-slot="sidebar">
+<include src="docs/_sidebar.phtml">
+</template>
+
+<div class="docs-content">
+  <span class="section-label">Philosophy</span>
+  <h1 class="gradient-text">Why index97 exists.</h1>
+  <p class="lead">Every framework is a theory about what building for the web should feel like. This is mine.</p>
+
+  <h2>The web platform is enough</h2>
+  <p>At some point, the web development community collectively decided that HTML forms are bad, HTTP verbs are inconvenient, and the browser's built-in capabilities aren't good enough. So we built abstractions on top of abstractions to compensate.</p>
+  <p>index97 disagrees. HTML forms are good. HTTP semantics are meaningful. CSS is powerful. The browser is capable. The web platform has earned your trust — give it a chance before reaching for an abstraction.</p>
+
+  <div class="callout">
+    <strong>Rule of thumb:</strong> If a browser can do it natively, index97 makes it easy. If a browser can't do it, index97 doesn't pretend it can.
+  </div>
+
+  <h2>The file is the unit of deployment</h2>
+  <p>In 1997, you uploaded files. Each file was a page. The URL matched the file path. Everyone understood it immediately.</p>
+  <p>index97 restores that mental model. <code>about.phtml</code> is <code>/about</code>. <code>blog/[slug].js</code> is <code>/blog/:slug</code>. You never need to open a router config to understand where a URL goes — just look at the files.</p>
+
+  <h2>Convention over configuration</h2>
+  <p>Good defaults eliminate decisions. index97 establishes clear conventions so you spend time building features, not setting up infrastructure:</p>
+  <ul>
+    <li>Files starting with <code>_</code> are private (layouts, auth helpers, database modules)</li>
+    <li>Files wrapped in <code>[brackets]</code> are dynamic route parameters</li>
+    <li><code>_layout.html</code> wraps everything in its directory and below</li>
+    <li>An <code>index</code> file maps to the directory root</li>
+    <li>A <code>.js</code> file with the same name as a <code>.phtml</code> is its data source</li>
+  </ul>
+  <p>These conventions are obvious once you see them, and invisible once you know them.</p>
+
+  <h2>Zero abstraction layers</h2>
+  <p>index97 adds as little as possible between you and the platform. A request comes in as a standard <code>Request</code> object. You return a standard <code>Response</code> — or a plain object that gets merged with a template. No middleware chains to understand. No request lifecycle to memorize.</p>
+  <p>When something goes wrong, the stack trace points at your code, not at three layers of framework internals.</p>
+
+  <h2>Explicit over magic</h2>
+  <p>When data flows into a template, you see it. When a layout is applied, you know which file it came from. When a partial is included, the syntax makes it obvious. index97 doesn't do things behind your back.</p>
+  <p>The <code>@</code> sigil for passing parent data to partials, the <code>_method</code> form override, the <code>{{{triple braces}}}</code> for raw HTML — every feature is intentional and visible.</p>
+
+  <h2>Simplicity as a feature</h2>
+  <p>Complexity has a cost. Every abstraction you add is something future-you or your teammates need to understand. index97 is deliberately small. You can read the entire source in an afternoon. You can understand what it does without a guide.</p>
+  <p>Simple systems are predictable. Predictable systems are reliable. Reliable systems ship.</p>
+
+  <h2>Immediate feedback — Bret Victor's "seeing spaces"</h2>
+  <p>The best creative tools show you what you're making while you're making it. index97's hot reload is SSE-based and file-aware: CSS changes re-stamp without a page reload, preserving your scroll position and application state. You see your design change as you type.</p>
+  <p>This isn't just developer experience polish — it changes how you think. When feedback is immediate, you experiment more. When you experiment more, you build better things.</p>
+
+  <h2>The 1997 spirit</h2>
+  <p>1997 was a specific moment on the web. Geocities. Hit counters. Guestbooks. Under construction GIFs. It was messy and chaotic and wonderful. Anyone could build anything. You didn't need a CS degree or a $10,000 laptop or a team of engineers. You needed Notepad and an FTP client.</p>
+  <p>index97 isn't nostalgic for the aesthetic — it's nostalgic for the <em>accessibility</em>. For the feeling that the web belongs to everyone. That you can have an idea in the morning and show it to people by afternoon.</p>
+  <p>I want that feeling back. I think index97 makes it possible again.</p>
+
+  <div class="callout pink">
+    <strong>The goal:</strong> index97 should feel like you're working <em>with</em> the web, not around it. Every feature should make you feel more capable, not more dependent.
+  </div>
+</div>

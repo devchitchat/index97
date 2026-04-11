@@ -1,0 +1,104 @@
+<template data-slot="title">index97 — Building websites like it's 1997</template>
+<template data-slot="head">
+  <meta name="description" content="index97 is a Bun-native web framework. File-based routing, zero config, web platform first.">
+</template>
+
+<section class="hero">
+  <img src="/logo.png" alt="index97" class="hero-logo">
+  <h1 class="gradient-text">Building websites<br>like it's 1997.</h1>
+  <p>A Bun-native web framework that trusts the platform. File-based routing, zero build steps, HTML that works, JavaScript that ships.</p>
+  <div class="hero-actions">
+    <a href="/docs/guide" class="btn-primary">Get Started →</a>
+    <a href="/docs" class="btn-secondary">Read the Docs</a>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-header">
+    <span class="section-label">Why index97</span>
+    <h2 class="gradient-text">The web platform is enough.</h2>
+    <p class="lead">Stop fighting your framework. Start shipping.</p>
+  </div>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <span class="feature-icon">⚡</span>
+      <h3>Zero Config</h3>
+      <p>The file is the route. Drop <code>about.phtml</code> in your pages directory, get <code>/about</code>. No router setup, no config file, no thinking.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🌐</span>
+      <h3>Web Platform First</h3>
+      <p>HTML forms, HTTP verbs, browser APIs. index97 doesn't invent new abstractions — it makes the ones you already know work beautifully.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🐇</span>
+      <h3>Bun Native</h3>
+      <p>SQLite, password hashing, markdown rendering, file serving, WebSockets — all built in. Zero extra dependencies to manage.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🔥</span>
+      <h3>Hot Reload</h3>
+      <p>SSE-based HMR that re-stamps CSS without a page reload. See your changes instantly — inspired by Bret Victor's "seeing space."</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📐</span>
+      <h3>Layouts &amp; Slots</h3>
+      <p>Named slots with default values. Layout data providers. Per-directory layouts. Everything composes cleanly without magic.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">✦</span>
+      <h3>Just JavaScript</h3>
+      <p>ES modules, async handlers, no transpilation step. Export a <code>GET</code> function, return an object, done. It's that simple.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-header">
+    <span class="section-label">How it works</span>
+    <h2>Drop a file. Get a route.</h2>
+  </div>
+
+  <div class="showcase">
+    <div>
+      <div class="file-tree">
+        <span class="dir">pages/</span>
+        <span class="indent special">_layout.html</span>
+        <span class="indent file">index.phtml</span>
+        <span class="indent file">about.phtml</span>
+        <span class="indent dir">blog/</span>
+        <span class="indent2 file">index.js</span>
+        <span class="indent2 file">index.phtml</span>
+        <span class="indent2 dynamic">[slug].js</span>
+        <span class="indent2 dynamic">[slug].phtml</span>
+        <span class="indent dir">public/</span>
+        <span class="indent2 file">style.css</span>
+      </div>
+    </div>
+    <div>
+<pre><code><span class="code-comment">// blog/[slug].js</span>
+import { getPost } from './_db.js'
+
+export async function GET(req) {
+  const post = getPost(req.params.slug)
+  if (!post) return new Response('', { status: 404 })
+  return { post }
+}</code></pre>
+<pre><code><span class="code-comment">&lt;!-- blog/[slug].phtml --&gt;</span>
+&lt;h1&gt;{{<span></span>post.title}}&lt;/h1&gt;
+&lt;p&gt;{{<span></span>post.body}}&lt;/p&gt;
+&lt;a href="/blog"&gt;← Back&lt;/a&gt;</code></pre>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <span class="section-label">Ready?</span>
+  <h2 class="gradient-text">Start building in seconds.</h2>
+  <p class="lead">No front-end application templates to clone. Just Bun and a folder.</p>
+  <div class="hero-actions">
+    <a href="/docs/guide" class="btn-primary">Quick Start Guide →</a>
+    <a href="/docs/philosophy" class="btn-secondary">Read the Philosophy</a>
+  </div>
+</section>

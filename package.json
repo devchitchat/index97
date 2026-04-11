@@ -1,0 +1,77 @@
+{
+  "name": "@devchitchat/index97",
+  "version": "0.0.0",
+  "description": "A Bun-native web framework that trusts the platform. File-based routing, zero build steps, HTML that works, JavaScript that ships.",
+  "module": "index.js",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./forms": "./src/forms.js",
+    "./markdown": "./src/markdown.js",
+    "./rate-limit": "./src/rate-limit.js",
+    "./build": "./src/build.js"
+  },
+  "files": [
+    "index.js",
+    "cli.js",
+    "README.md",
+    "src/build.js",
+    "src/cli.js",
+    "src/errors.js",
+    "src/forms.js",
+    "src/handler.js",
+    "src/hmr-client.js",
+    "src/hot-reload.js",
+    "src/layout.js",
+    "src/markdown.js",
+    "src/partials.js",
+    "src/rate-limit.js",
+    "src/router.js",
+    "src/serve.js",
+    "src/server.js",
+    "src/template.js"
+  ],
+  "bin": {
+    "index97": "cli.js"
+  },
+  "scripts": {
+    "dev": "bun dev.js",
+    "prof": "bun --cpu-prof --cpu-prof-md dev.js",
+    "test": "bun test"
+  },
+  "keywords": [
+    "bun",
+    "framework",
+    "web",
+    "server",
+    "routing",
+    "file-based-routing"
+  ],
+  "author": "Joey Guerra",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/devchitchat/index97.git"
+  },
+  "homepage": "https://github.com/devchitchat/index97#readme",
+  "bugs": {
+    "url": "https://github.com/devchitchat/index97/issues"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

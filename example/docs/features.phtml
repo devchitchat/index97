@@ -1,0 +1,179 @@
+<template data-slot="title">Features — index97</template>
+<template data-slot="sidebar">
+<include src="docs/_sidebar.phtml">
+</template>
+
+<div class="docs-content">
+  <span class="section-label">Reference</span>
+  <h1 class="gradient-text">Features</h1>
+  <p class="lead">Everything index97 provides, all in one place.</p>
+
+  <h2>Template syntax</h2>
+
+  <table class="ref-table">
+    <thead>
+      <tr><th>Syntax</th><th>Behavior</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>{{<span></span>variable}}</td><td>HTML-escaped output. Safe for user content.</td></tr>
+      <tr><td>{{{<span></span>variable}}}</td><td>Raw HTML output. Use for trusted content like rendered Markdown.</td></tr>
+      <tr><td>{{<span></span>#if key}}…{{/if}}</td><td>Renders block if <code>key</code> is truthy.</td></tr>
+      <tr><td>{{<span></span>#unless key}}…{{/unless}}</td><td>Renders block if <code>key</code> is falsy.</td></tr>
+      <tr><td>{{<span></span>#each list}}…{{/each}}</td><td>Iterates over an array. Context inside is each item.</td></tr>
+      <tr><td>{{<span></span>!key}}</td><td>Outputs the boolean negation of <code>key</code> as a string.</td></tr>
+      <tr><td>{{<span></span>key.nested}}</td><td>Dot-notation path resolution.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Layout slots</h2>
+
+  <table class="ref-table">
+    <thead>
+      <tr><th>Syntax</th><th>Where</th><th>Behavior</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>{{<span></span>content}}</td><td>_layout.html</td><td>Where page content is injected.</td></tr>
+      <tr><td>{{<span></span>slot:name}}</td><td>_layout.html</td><td>Named slot. Empty if page doesn't provide it.</td></tr>
+      <tr><td>{{<span></span>slot:name || default}}</td><td>_layout.html</td><td>Named slot with fallback default value.</td></tr>
+      <tr><td>&lt;template data-slot="name"&gt;…&lt;/template&gt;</td><td>.phtml page</td><td>Provides content for a named layout slot.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Handler exports</h2>
+  <p>A <code>.js</code> handler file can export any HTTP method as an async function:</p>
+
+<pre><code>export async function GET(req) { … }
+export async function POST(req) { … }
+export async function PUT(req) { … }
+export async function PATCH(req) { … }
+export async function DELETE(req) { … }</code></pre>
+
+  <p>Return values:</p>
+  <table class="ref-table">
+    <thead>
+      <tr><th>Return value</th><th>Behavior</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Plain object <code>{ key: value }</code></td><td>Merged with the paired <code>.phtml</code> template and rendered as HTML.</td></tr>
+      <tr><td><code>Response</code> object</td><td>Returned as-is. Use for redirects, errors, JSON, etc.</td></tr>
+      <tr><td>HTML string</td><td>Returned as <code>text/html</code> response.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Dynamic routes</h2>
+  <p>Wrap a filename segment in square brackets to make it dynamic:</p>
+<pre><code>pages/blog/[slug].js       → /blog/:slug
+pages/users/[id]/posts.js  → /users/:id/posts</code></pre>
+  <p>Access params via <code>req.params.slug</code>, <code>req.params.id</code>, etc.</p>
+
+  <h2>Form method override</h2>
+  <p>Use any HTTP verb in your HTML forms. index97 rewrites them automatically:</p>
+<pre><code>&lt;form method="DELETE" action="/posts/{{id}}"&gt;
+  &lt;button type="submit"&gt;Delete&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+  <p>Becomes <code>method="POST"</code> with a hidden <code>_method=DELETE</code> field. The handler receives a proper <code>DELETE</code> request.</p>
+
+  <h2>Server-side includes</h2>
+  <p>The parent's data — from either a <code>.phtml</code> page or a <code>.js</code> handler — is always available for <code>@key</code> resolution.</p>
+<pre><code>&lt;!-- Inherit full parent context --&gt;
+&lt;include src="partials/nav.phtml"&gt;
+
+&lt;!-- Pass a specific key from parent data --&gt;
+&lt;include src="partials/user-card.phtml" user="@currentUser"&gt;
+
+&lt;!-- Pass a literal string --&gt;
+&lt;include src="partials/alert.phtml" type="warning"&gt;</code></pre>
+
+  <h2>Markdown pages</h2>
+  <p>Create <code>.md</code> files with optional YAML front matter. Front matter keys map to layout slots:</p>
+<pre><code>---
+title: My Post
+head: |
+  &lt;meta name="description" content="…"&gt;
+---
+
+# My Post
+
+Content here.</code></pre>
+
+  <h2>Layout data provider</h2>
+  <p>Create <code>_layout.js</code> alongside <code>_layout.html</code> to provide request-aware data to the layout:</p>
+<pre><code>// _layout.js
+import { getSession } from './_auth.js'
+Available template variables
+export function data(req) {
+  const session = getSession(req)
+  return { session }
+}</code></pre>
+  <p>The layout can then use <code>{{<span></span>#if session}}</code>, <code>{{<span></span>session.email}}</code>, etc.</p>
+
+  <h2>Error pages</h2>
+  <table class="ref-table">
+    <thead>
+      <tr><th>File</th><th>Handles</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>_404.html</td><td>404 Not Found errors</td></tr>
+      <tr><td>_error.html</td><td>All other errors (500, 401, etc.)</td></tr>
+    </tbody>
+  </table>
+  <p>Available template variables: <code>{{<span></span>status}}</code>, <code>{{<span></span>title}}</code>, <code>{{<span></span>message}}</code>. Error pages are found by walking up from the failing route's directory.</p>
+
+  <h2>Bun APIs used</h2>
+  <table class="ref-table">
+    <thead>
+      <tr><th>API</th><th>Use</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Bun.serve()</td><td>HTTP server with file-based routes and WebSocket support</td></tr>
+      <tr><td>bun:sqlite</td><td>SQLite database (use in your <code>_db.js</code> files)</td></tr>
+      <tr><td>Bun.password</td><td>Argon2id password hashing and verification</td></tr>
+      <tr><td>Bun.markdown.html()</td><td>Markdown → HTML rendering</td></tr>
+      <tr><td>Bun.YAML.parse()</td><td>Front matter parsing</td></tr>
+      <tr><td>Bun.file()</td><td>Fast file reading</td></tr>
+      <tr><td>Bun.Glob</td><td>File discovery during route scanning</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Hot reload (dev mode)</h2>
+  <p>Enable with <code>dev: true</code> in <code>createServer()</code>. A file watcher broadcasts changes via SSE:</p>
+  <ul>
+    <li><strong>CSS files</strong> — re-stamps <code>&lt;link&gt;</code> href with <code>?t=timestamp</code>. No flash, no scroll reset.</li>
+    <li><strong>All other files</strong> — fetches the updated HTML and morphs the live DOM in place using <code>DOMParser</code>. No full page reload, no lost scroll position or state.</li>
+  </ul>
+  <p>The HMR endpoint is <code>/__index97_hmr</code>. The client script is injected automatically in dev mode.</p>
+
+  <h2>CLI commands</h2>
+  <table class="ref-table">
+    <thead>
+      <tr><th>Command</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>index97 dev [pagesDir]</td><td>Start development server with hot reload. Defaults to current directory.</td></tr>
+      <tr><td>index97 start [pagesDir]</td><td>Start production server. No hot reload.</td></tr>
+      <tr><td>index97 build [pagesDir]</td><td>Generate static site into <code>dist/</code>.</td></tr>
+      <tr><td>index97 serve [dir]</td><td>Serve a pre-built static directory. Defaults to <code>dist/</code>.</td></tr>
+    </tbody>
+  </table>
+  <p>All commands accept <code>--port &lt;n&gt;</code>. <code>build</code> also accepts <code>--out &lt;dir&gt;</code> (default: <code>dist</code>).</p>
+
+  <h2>Static site generation</h2>
+  <p><code>index97 build</code> renders all routes to static HTML files and copies <code>public/</code> assets to the output directory.</p>
+  <ul>
+    <li>Static routes (<code>.phtml</code>, <code>.html</code>, <code>.md</code>) are always included.</li>
+    <li>Dynamic routes (<code>[param].js</code>) must export a <code>staticPaths()</code> function that returns the list of param objects to render. Routes without it are skipped with a warning.</li>
+  </ul>
+<pre><code>// blog/[slug].js
+import { getAllPosts, getPost } from './_db.js'
+
+export async function GET(req) {
+  const post = getPost(req.params.slug)
+  if (!post) return new Response('', { status: 404 })
+  return { post }
+}
+
+export async function staticPaths() {
+  return getAllPosts().map(p => ({ slug: p.slug }))
+}</code></pre>
+  <p>Output structure mirrors the URL paths, with each page written as <code>index.html</code> inside a directory — so <code>/blog/hello-world</code> becomes <code>dist/blog/hello-world/index.html</code>.</p>
+</div>

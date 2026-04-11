@@ -1,0 +1,29 @@
+<template data-slot="title">Blog — index97</template>
+<template data-slot="head">
+  <link rel="stylesheet" href="/blog.css">
+</template>
+<template data-slot="sidebar">
+  <aside class="docs-sidebar">
+    <nav>
+      {{#if isAdmin}}
+      <span class="docs-sidebar-section">Admin</span>
+      <a href="/blog/new">+ New Post</a>
+      {{/if}}
+    </nav>
+  </aside>
+</template>
+<ul>
+  {{#each posts}}
+  <li>
+    <header>
+        <h2 class="gradient-text">{{title}}</h2>
+    </header>
+    <p class="lead">{{{excerpt}}}</p>
+    <a href="/blog/{{slug}}">Continue Reading</a>
+  </li>
+  {{/each}}
+</ul>
+
+{{#unless posts}}
+<p>No posts yet.</p>
+{{/unless}}

@@ -1,0 +1,19 @@
+<template data-slot="title">{{post.title}} — index97</template>
+<template data-slot="sidebar">
+  <include src="blog/_sidebar.phtml">
+</template>
+
+<article>
+  <h1>{{post.title}}</h1>
+  {{{body}}}
+</article>
+
+{{#if isAdmin}}
+<footer>
+  <a href="/blog/{{post.slug}}/edit">Edit</a>
+  <form method="DELETE" action="/blog/{{post.slug}}">
+    <button type="submit">Delete</button>
+  </form>
+</footer>
+{{/if}}
+

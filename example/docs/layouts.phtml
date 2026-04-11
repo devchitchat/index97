@@ -1,0 +1,53 @@
+<template data-slot="title">Layouts — index97</template>
+<template data-slot="sidebar">
+<include src="docs/_sidebar.phtml">
+</template>
+
+<div class="docs-content">
+  <span class="section-label">Reference</span>
+  <h1 class="gradient-text">Layouts</h1>
+  <p class="lead">One layout file wraps everything in its directory — and below.</p>
+
+  <h2>How it works</h2>
+  <p>Create a <code>_layout.html</code> in your pages directory. Every <code>.phtml</code>, <code>.js</code>, and <code>.md</code> route in that directory (and any subdirectory without its own layout) is automatically wrapped by it.</p>
+
+<pre><code>&lt;!-- _layout.html --&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;title&gt;{{<span></span>slot:title || My Site}}&lt;/title&gt;
+  {{<span></span>slot:head}}
+&lt;/head&gt;
+&lt;body&gt;
+  {{<span></span>content}}
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+  <h2>Named slots</h2>
+  <p>Pages can provide content for named slots using <code>&lt;template data-slot&gt;</code>:</p>
+
+<pre><code>&lt;!-- about.phtml --&gt;
+&lt;template data-slot="title"&gt;About Us&lt;/template&gt;
+&lt;template data-slot="head"&gt;
+  &lt;meta name="description" content="About our team."&gt;
+&lt;/template&gt;
+
+&lt;h1&gt;About Us&lt;/h1&gt;</code></pre>
+
+  <h2>Layout data provider</h2>
+  <p>Pair <code>_layout.js</code> with <code>_layout.html</code> to inject request-aware variables into the layout itself — like session data for conditional nav:</p>
+
+<pre><code>// _layout.js
+import { getSession } from './_auth.js'
+
+export function data(req) {
+  return { session: getSession(req) }
+}
+
+&lt;!-- _layout.html --&gt;
+{{#if session}}&lt;a href="/signout"&gt;Sign out&lt;/a&gt;{{/if}}
+{{#unless session}}&lt;a href="/signin"&gt;Sign in&lt;/a&gt;{{/unless}}</code></pre>
+
+  <h2>Per-section layouts</h2>
+  <p>Subdirectories can have their own <code>_layout.html</code>. index97 uses the nearest one found walking up from the current page. A <code>/blog/_layout.html</code> can wrap all blog pages differently from the root layout.</p>
+</div>

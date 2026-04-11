@@ -1,0 +1,46 @@
+<template data-slot="title">Documentation — index97</template>
+<template data-slot="sidebar">
+<include src="docs/_sidebar.phtml">
+</template>
+
+<div class="docs-content">
+  <span class="section-label">Documentation</span>
+  <h1 class="gradient-text">What is index97?</h1>
+  <p class="lead">A Bun-native web framework built on one idea: the web platform is already good enough.</p>
+
+  <p>index97 gives you file-based routing, a simple template engine, layouts with named slots, server-side includes, and hot reload — all wired together with zero configuration. If you know HTML, CSS, and JavaScript, you already know most of index97.</p>
+
+  <div class="callout">
+    <strong>The name.</strong> index97 evokes the era when building for the web meant an <code>index.html</code> file and a text editor. That simplicity was a feature, not a limitation.
+  </div>
+
+  <h2>Quick orientation</h2>
+
+  <table class="ref-table">
+    <thead>
+      <tr><th>Concept</th><th>How it works</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Routing</td><td>Every file in your pages directory is a route. The filename becomes the URL path.</td></tr>
+      <tr><td>Pages</td><td><code>.phtml</code> files are server-rendered templates. Pair with a <code>.js</code> file to provide data.</td></tr>
+      <tr><td>Handlers</td><td><code>.js</code> files export named functions (<code>GET</code>, <code>POST</code>, <code>DELETE</code>…) that handle HTTP requests.</td></tr>
+      <tr><td>Layouts</td><td><code>_layout.html</code> wraps pages automatically. index97 walks up directories to find one.</td></tr>
+      <tr><td>Markdown</td><td><code>.md</code> files are rendered as pages, with YAML front matter populating layout slots.</td></tr>
+      <tr><td>Dynamic routes</td><td><code>[param].js</code> files match URL segments. Access via <code>req.params.param</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Start here</h2>
+  <ul>
+    <li><a href="/docs/guide">Quick Start</a> — get a server running in under 5 minutes</li>
+    <li><a href="/docs/philosophy">Philosophy</a> — understand the "why" behind every decision</li>
+    <li><a href="/docs/architecture">Architecture</a> — how all the pieces fit together</li>
+    <li><a href="/docs/features">Features</a> — full reference of everything index97 provides</li>
+  </ul>
+
+  <h2>Requirements</h2>
+  <ul>
+    <li><a href="https://bun.sh">Bun</a> v1.0 or later</li>
+    <li>That's it.</li>
+  </ul>
+</div>

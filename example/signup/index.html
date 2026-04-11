@@ -1,0 +1,15 @@
+<template data-slot="title">Sign up — index97</template>
+
+<h1>Sign up</h1>
+
+{{#if error}}<p class="error">{{error}}</p>{{/if}}
+
+<div id="signup-form">
+  <noscript>JavaScript is required to load the signup form.</noscript>
+</div>
+
+<script>
+  fetch('/signup/form')
+    .then(r => r.text())
+    .then(html => { document.getElementById('signup-form').innerHTML = html })
+</script>

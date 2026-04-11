@@ -1,0 +1,100 @@
+<template data-slot="title">CLI — index97</template>
+<template data-slot="sidebar">
+<include src="docs/_sidebar.phtml">
+</template>
+
+<div class="docs-content">
+  <span class="section-label">Reference</span>
+  <h1 class="gradient-text">CLI</h1>
+  <p class="lead">Three commands. That's it.</p>
+
+  <h2>index97 dev</h2>
+  <p>Start a development server with hot reload enabled.</p>
+<pre><code>index97 dev [pagesDir] [--port &lt;n&gt;]</code></pre>
+  <ul>
+    <li>Watches the pages directory for changes</li>
+    <li>CSS changes re-stamp without a page reload</li>
+    <li>All other changes morph the DOM in place</li>
+    <li>Defaults to the current directory and port 3000</li>
+    <li>Port can also be set via the <code>PORT</code> environment variable</li>
+  </ul>
+<pre><code>index97 dev ./pages
+index97 dev ./pages --port 8080</code></pre>
+
+  <h2>index97 start</h2>
+  <p>Start a production server. No file watcher, no HMR script injected.</p>
+<pre><code>index97 start [pagesDir] [--port &lt;n&gt;]</code></pre>
+<pre><code>index97 start ./pages
+index97 start ./pages --port 8080</code></pre>
+
+  <h2>index97 serve</h2>
+  <p>Serve a pre-built static directory. Use this after <code>index97 build</code> to preview the output or run it in production without a dynamic server.</p>
+<pre><code>index97 serve [dir] [--port &lt;n&gt;]</code></pre>
+  <ul>
+    <li>Serves files directly from the output directory</li>
+    <li>URL paths map to <code>index.html</code> files inside matching directories</li>
+    <li>Static assets (<code>.css</code>, <code>.js</code>, images) are served directly</li>
+    <li>Returns 404 for unknown paths</li>
+    <li>Defaults to <code>dist/</code> and port 3000</li>
+  </ul>
+<pre><code>index97 build ./pages && index97 serve
+index97 serve ./output --port 8080</code></pre>
+
+  <h2>index97 build</h2>
+  <p>Generate a static site. Renders all routes to HTML files and copies <code>public/</code> assets.</p>
+<pre><code>index97 build [pagesDir] [--out &lt;dir&gt;]</code></pre>
+  <ul>
+    <li>Static routes (<code>.phtml</code>, <code>.html</code>, <code>.md</code>) are rendered automatically</li>
+    <li>Dynamic routes require a <code>staticPaths()</code> export — see below</li>
+    <li>Routes without <code>staticPaths()</code> are skipped with a warning</li>
+    <li>Output defaults to <code>dist/</code></li>
+    <li>Each page is written as <code>index.html</code> inside a directory matching the URL path</li>
+  </ul>
+<pre><code>index97 build ./pages
+index97 build ./pages --out ./output</code></pre>
+
+  <h3>staticPaths()</h3>
+  <p>Export <code>staticPaths()</code> from any dynamic route handler to tell the builder which URLs to generate. Return an array of param objects — one per page to render.</p>
+<pre><code>// blog/[slug].js
+import { getAllPosts, getPost } from './_db.js'
+
+export async function GET(req) {
+  const post = getPost(req.params.slug)
+  if (!post) return new Response('', { status: 404 })
+  return { post }
+}
+
+export async function staticPaths() {
+  return getAllPosts().map(p => ({ slug: p.slug }))
+}</code></pre>
+
+  <p>For routes with multiple dynamic segments, return all the params for each combination:</p>
+<pre><code>// users/[userId]/posts/[postId].js
+export async function staticPaths() {
+  return [
+    { userId: '1', postId: 'a' },
+    { userId: '1', postId: 'b' },
+    { userId: '2', postId: 'c' },
+  ]
+}</code></pre>
+
+  <h3>Output structure</h3>
+  <p>URLs map to directories with <code>index.html</code> files, so they work on any static host:</p>
+  <div class="file-tree">
+    <span class="dir">dist/</span>
+    <span class="indent file">index.html           <span class="comment">← /</span></span>
+    <span class="indent dir">about/</span>
+    <span class="indent2 file">index.html         <span class="comment">← /about</span></span>
+    <span class="indent dir">blog/</span>
+    <span class="indent2 file">index.html         <span class="comment">← /blog</span></span>
+    <span class="indent2 dir">hello-world/</span>
+    <span class="indent3 file">index.html   <span class="comment">← /blog/hello-world</span></span>
+    <span class="indent dir">public/</span>
+    <span class="indent2 file">style.css</span>
+    <span class="indent2 file">logo.png</span>
+  </div>
+
+  <div class="callout">
+    <strong>Note:</strong> <code>staticPaths()</code> runs at build time, so it has access to your database and any data sources available in your environment. Make sure your DB is populated before running the build.
+  </div>
+</div>
