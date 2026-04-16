@@ -115,3 +115,46 @@ test('render escapes {{variable}} but not {{{variable}}}', () => {
 test('render outputs empty string for missing {{{variable}}}', () => {
   expect(render('{{{missing}}}', {})).toBe('')
 })
+
+test('render supports nested {{#each}} blocks', () => {
+  const tmpl = '{{#each categories}}{{#each items}}{{name}} {{/each}}{{/each}}'
+  const data = {
+    categories: [
+      { items: [{ name: 'a' }, { name: 'b' }] },
+      { items: [{ name: 'c' }] }
+    ]
+  }
+  expect(render(tmpl, data)).toBe('a b c ')
+})
+
+test('render accesses outer scope variable from inside nested {{#each}}', () => {
+  const tmpl = '{{#each categories}}{{#each items}}{{catName}}:{{name}} {{/each}}{{/each}}'
+  const data = {
+    categories: [
+      { catName: 'A', items: [{ name: 'x' }, { name: 'y' }] },
+      { catName: 'B', items: [{ name: 'z' }] }
+    ]
+  }
+  expect(render(tmpl, data)).toBe('A:x A:y B:z ')
+})
+
+test('render inner {{#each}} variable shadows outer variable with same name', () => {
+  const tmpl = '{{#each outer}}{{#each inner}}{{name}} {{/each}}{{/each}}'
+  const data = {
+    outer: [
+      { name: 'outer1', inner: [{ name: 'inner1' }, { name: 'inner2' }] }
+    ]
+  }
+  expect(render(tmpl, data)).toBe('inner1 inner2 ')
+})
+
+test('render accesses root scope variable from deeply nested {{#each}}', () => {
+  const tmpl = '{{#each groups}}{{#each members}}{{title}} {{/each}}{{/each}}'
+  const data = {
+    title: 'Report',
+    groups: [
+      { members: [{ name: 'Alice' }, { name: 'Bob' }] }
+    ]
+  }
+  expect(render(tmpl, data)).toBe('Report Report ')
+})
