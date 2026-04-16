@@ -198,6 +198,6 @@ export async function createServer({
     process.on('SIGTERM', shutdown)
   }
 
-  console.log(`\nindex97 running at http://localhost:${port}`)
+  console.log(`\nindex97 running at ${server.url.href}`)
   return server
 }
