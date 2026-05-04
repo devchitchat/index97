@@ -6,7 +6,7 @@ import { findLayout, findLayoutData, applyLayout } from './layout.js'
 import { rewriteFormMethods, resolveMethod } from './forms.js'
 import { renderMarkdown } from './markdown.js'
 import { resolveIncludes } from './partials.js'
-import { findErrorPage, renderErrorPage } from './errors.js'
+import { findErrorPage, renderErrorPage, renderDefaultErrorPage } from './errors.js'
 import path from 'node:path'
 
 // Render layout data into the layout template BEFORE injecting page content.
@@ -70,7 +70,18 @@ function addSecurityHeaders(response, securityHeaders) {
   return new Response(response.body, { status: response.status, headers })
 }
 
-function withErrorHandler(handler, pagesDir, dev, securityHeaders) {
+async function resolveErrorResponse(status, message, notFoundPage, pagesDir, dev) {
+  if (notFoundPage && status === 404) {
+    if (await Bun.file(notFoundPage).exists()) {
+      return renderErrorPage(notFoundPage, status, message, dev)
+    }
+  }
+  const errorPage = await findErrorPage(status, pagesDir, pagesDir)
+  if (errorPage) return renderErrorPage(errorPage, status, message, dev)
+  return renderDefaultErrorPage(status)
+}
+
+function withErrorHandler(handler, pagesDir, dev, securityHeaders, notFoundPage) {
   return async (req) => {
     try {
       const response = await handler(req)
@@ -82,9 +93,7 @@ function withErrorHandler(handler, pagesDir, dev, securityHeaders) {
     } catch (err) {
       console.error(err)
       const status = err.status ?? 500
-      const errorPage = await findErrorPage(status, pagesDir, pagesDir)
-      if (errorPage) return addSecurityHeaders(await renderErrorPage(errorPage, status, err?.message ?? '', dev), securityHeaders)
-      return addSecurityHeaders(new Response('Internal Server Error', { status }), securityHeaders)
+      return addSecurityHeaders(await resolveErrorResponse(status, err?.message ?? '', notFoundPage, pagesDir, dev), securityHeaders)
     }
   }
 }
@@ -96,6 +105,7 @@ export async function createServer({
   csp,
   permissionsPolicy = 'camera=(), microphone=(), geolocation=()',
   onShutdown = null,
+  notFoundPage = null,
   ...serveOptions
 } = {}) {
   const securityHeaders = buildSecurityHeaders(dev, { csp, permissionsPolicy })
@@ -107,7 +117,7 @@ export async function createServer({
       bunRoutes[route.pattern] = withErrorHandler(async () => {
         const html = await Bun.file(route.filePath).text()
         return new Response(finalizeHtml(html, dev), { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
-      }, pagesDir, dev, securityHeaders)
+      }, pagesDir, dev, securityHeaders, notFoundPage)
     } else if (route.kind === 'page') {
       bunRoutes[route.pattern] = withErrorHandler(async (req) => {
         let html = await Bun.file(route.filePath).text()
@@ -184,9 +194,7 @@ export async function createServer({
         if (await publicFile.exists()) return addSecurityHeaders(new Response(publicFile), securityHeaders)
       }
 
-      const errorPage = await findErrorPage(404, pagesDir, pagesDir)
-      if (errorPage) return addSecurityHeaders(await renderErrorPage(errorPage, 404, 'Page not found', dev), securityHeaders)
-      return addSecurityHeaders(new Response('Not Found', { status: 404 }), securityHeaders)
+      return addSecurityHeaders(await resolveErrorResponse(404, 'Page not found', notFoundPage, pagesDir, dev), securityHeaders)
     }
   })
 

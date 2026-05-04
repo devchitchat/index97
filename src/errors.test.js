@@ -1,5 +1,5 @@
 import { test, expect, beforeAll, afterAll } from 'bun:test'
-import { findErrorPage, renderErrorPage } from './errors.js'
+import { findErrorPage, renderErrorPage, renderDefaultErrorPage } from './errors.js'
 import path from 'node:path'
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs'
 
@@ -99,4 +99,25 @@ test('renderErrorPage renders correct title for 403', async () => {
   const body = await response.text()
   expect(response.status).toBe(403)
   expect(body).toContain('Forbidden')
+})
+
+test('renderDefaultErrorPage returns 404 status with HTML content type', async () => {
+  const response = renderDefaultErrorPage(404)
+  expect(response.status).toBe(404)
+  expect(response.headers.get('Content-Type')).toContain('text/html')
+})
+
+test('renderDefaultErrorPage includes status and title in body', async () => {
+  const response = renderDefaultErrorPage(404)
+  const body = await response.text()
+  expect(body).toContain('404')
+  expect(body).toContain('Not Found')
+})
+
+test('renderDefaultErrorPage works for 500', async () => {
+  const response = renderDefaultErrorPage(500)
+  const body = await response.text()
+  expect(response.status).toBe(500)
+  expect(body).toContain('500')
+  expect(body).toContain('Internal Server Error')
 })

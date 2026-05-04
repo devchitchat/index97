@@ -108,3 +108,24 @@ test('createServer passes other Bun.serve options through (hostname)', async () 
 
   server.stop()
 })
+
+test('createServer returns HTML 404 page by default when no _404.html exists', async () => {
+  const server = await createServer({ pagesDir: FIXTURES, port: 0, dev: false })
+  const res = await fetch(`http://localhost:${server.port}/does-not-exist`)
+  expect(res.status).toBe(404)
+  expect(res.headers.get('Content-Type')).toContain('text/html')
+  const body = await res.text()
+  expect(body).toContain('404')
+  server.stop()
+})
+
+test('createServer uses notFoundPage option when provided', async () => {
+  const customPage = path.join(FIXTURES, 'custom-404.html')
+  await Bun.write(customPage, '<h1>Custom 404 page</h1>')
+  const server = await createServer({ pagesDir: FIXTURES, port: 0, dev: false, notFoundPage: customPage })
+  const res = await fetch(`http://localhost:${server.port}/does-not-exist`)
+  expect(res.status).toBe(404)
+  expect(res.headers.get('Content-Type')).toContain('text/html')
+  expect(await res.text()).toContain('Custom 404 page')
+  server.stop()
+})
