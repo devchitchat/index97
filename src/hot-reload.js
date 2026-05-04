@@ -13,14 +13,27 @@ export function injectHmrScript(html) {
   return html + HMR_SCRIPT
 }
 
+const HEARTBEAT = encoder.encode(': ping\n\n')
+const HEARTBEAT_INTERVAL_MS = 8000
+
 export function createSseResponse() {
   let controller
+  let heartbeat
   const stream = new ReadableStream({
     start(c) {
       controller = c
       clients.add(controller)
+      heartbeat = setInterval(() => {
+        try {
+          controller.enqueue(HEARTBEAT)
+        } catch {
+          clearInterval(heartbeat)
+          clients.delete(controller)
+        }
+      }, HEARTBEAT_INTERVAL_MS)
     },
     cancel() {
+      clearInterval(heartbeat)
       clients.delete(controller)
     }
   })
