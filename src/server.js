@@ -63,8 +63,8 @@ function addSecurityHeaders(response, securityHeaders) {
   // Suppress Bun's default fingerprinting header
   headers.delete('Server')
   for (const [k, v] of Object.entries(securityHeaders)) {
-    // Allow per-response Permissions-Policy override from handler routes
-    if (k === 'Permissions-Policy' && headers.has(k)) continue
+    // Allow per-response Permissions-Policy / CSP override from handler routes
+    if ((k === 'Permissions-Policy' || k === 'Content-Security-Policy') && headers.has(k)) continue
     headers.set(k, v)
   }
   return new Response(response.body, { status: response.status, headers })

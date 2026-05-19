@@ -258,7 +258,7 @@ This means **inline styles and inline scripts are blocked**. Use external styles
 <link rel="stylesheet" href="/style.css">
 ```
 
-To override the CSP, pass a `csp` option to `createServer`:
+To override the CSP for the entire server, pass a `csp` option to `createServer`:
 
 ```js
 import { createServer } from '@devchitchat/index97'
@@ -267,3 +267,19 @@ createServer({
   csp: "default-src 'self'; style-src 'self' 'unsafe-inline'"
 })
 ```
+
+To override the CSP for a single route, set `Content-Security-Policy` on the response returned by the handler — index97 will leave it untouched:
+
+```js
+Bun.serve({
+  routes: {
+    '/embed': {
+      GET: () => new Response('ok', {
+        headers: { 'Content-Security-Policy': "frame-ancestors 'self' https://example.com" }
+      })
+    }
+  }
+})
+```
+
+The same pattern works for `Permissions-Policy`.
