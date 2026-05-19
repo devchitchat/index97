@@ -158,3 +158,17 @@ test('render accesses root scope variable from deeply nested {{#each}}', () => {
   }
   expect(render(tmpl, data)).toBe('Report Report ')
 })
+
+test('render supports nested {{#if}} blocks', () => {
+  const tmpl = '{{#if canBid}}outer{{#if isOpen}}inner{{/if}}end{{/if}}'
+  expect(render(tmpl, { canBid: true, isOpen: true })).toBe('outerinnerend')
+  expect(render(tmpl, { canBid: true, isOpen: false })).toBe('outerend')
+  expect(render(tmpl, { canBid: false, isOpen: true })).toBe('')
+})
+
+test('render supports nested {{#unless}} blocks', () => {
+  const tmpl = '{{#unless closed}}outer{{#unless hidden}}inner{{/unless}}end{{/unless}}'
+  expect(render(tmpl, { closed: false, hidden: false })).toBe('outerinnerend')
+  expect(render(tmpl, { closed: false, hidden: true })).toBe('outerend')
+  expect(render(tmpl, { closed: true, hidden: false })).toBe('')
+})

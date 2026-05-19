@@ -90,19 +90,79 @@ function processEach(template, scope) {
   return result
 }
 
+function processConditional(template, openPrefix, closeTag, data, chain) {
+  const scope = [...chain, data]
+  let result = ''
+  let pos = 0
+
+  while (pos < template.length) {
+    const openIdx = template.indexOf(openPrefix, pos)
+    if (openIdx === -1) {
+      result += template.slice(pos)
+      break
+    }
+
+    result += template.slice(pos, openIdx)
+
+    const tagEnd = template.indexOf('}}', openIdx + openPrefix.length)
+    if (tagEnd === -1) {
+      result += template.slice(openIdx)
+      break
+    }
+
+    const keyPath = template.slice(openIdx + openPrefix.length, tagEnd).trim()
+    const bodyStart = tagEnd + 2
+
+    // Find matching close tag tracking nesting depth
+    let depth = 1
+    let searchPos = bodyStart
+    let matchEnd = -1
+
+    while (searchPos < template.length) {
+      const nextOpen = template.indexOf(openPrefix, searchPos)
+      const nextClose = template.indexOf(closeTag, searchPos)
+
+      if (nextClose === -1) break
+
+      if (nextOpen !== -1 && nextOpen < nextClose) {
+        depth++
+        searchPos = nextOpen + openPrefix.length
+      } else {
+        depth--
+        if (depth === 0) {
+          matchEnd = nextClose
+          break
+        }
+        searchPos = nextClose + closeTag.length
+      }
+    }
+
+    if (matchEnd === -1) {
+      result += template.slice(openIdx, bodyStart)
+      pos = bodyStart
+      continue
+    }
+
+    const inner = template.slice(bodyStart, matchEnd)
+    const value = resolveWithChain(scope, keyPath)
+    const condition = openPrefix.startsWith('{{#unless') ? !value : value
+
+    if (condition) {
+      result += renderWithChain(inner, data, chain)
+    }
+
+    pos = matchEnd + closeTag.length
+  }
+
+  return result
+}
+
 function renderWithChain(template, data, chain) {
   const scope = [...chain, data]
   let result = processEach(template, scope)
 
-  result = result.replace(/\{\{#if ([\w.]+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (_, keyPath, inner) => {
-    const value = resolveWithChain(scope, keyPath)
-    return value ? renderWithChain(inner, data, chain) : ''
-  })
-
-  result = result.replace(/\{\{#unless ([\w.]+)\}\}([\s\S]*?)\{\{\/unless\}\}/g, (_, keyPath, inner) => {
-    const value = resolveWithChain(scope, keyPath)
-    return !value ? renderWithChain(inner, data, chain) : ''
-  })
+  result = processConditional(result, '{{#if ', '{{/if}}', data, chain)
+  result = processConditional(result, '{{#unless ', '{{/unless}}', data, chain)
 
   result = result.replace(/\{\{!([\w.]+)\}\}/g, (_, keyPath) => {
     const value = resolveWithChain(scope, keyPath)
