@@ -172,6 +172,11 @@ export async function createServer({
   const publicDir = path.join(pagesDir, 'public')
   const resolvedPublicBase = path.resolve(publicDir)
 
+  if (createServer._prevServer) {
+    createServer._prevServer.stop(true)
+    createServer._prevServer = null
+  }
+
   const server = Bun.serve({
     port,
     ...restServeOptions,
@@ -198,10 +203,17 @@ export async function createServer({
     }
   })
 
+  createServer._prevServer = server
+
   if (dev) createWatcher(pagesDir)
 
   if (onShutdown) {
     const shutdown = () => onShutdown(server)
+    if (createServer._prevShutdown) {
+      process.off('SIGINT', createServer._prevShutdown)
+      process.off('SIGTERM', createServer._prevShutdown)
+    }
+    createServer._prevShutdown = shutdown
     process.on('SIGINT', shutdown)
     process.on('SIGTERM', shutdown)
   }
