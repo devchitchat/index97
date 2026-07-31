@@ -1,0 +1,101 @@
+<template data-slot="title">Composing Apps — index97</template>
+<template data-slot="sidebar">
+<include src="docs/_sidebar.phtml">
+</template>
+
+<div class="docs-content">
+  <span class="section-label">Advanced</span>
+  <h1 class="gradient-text">Composing multiple apps on one port</h1>
+  <p class="lead">Run two independent apps — each with their own pages directory — on a single port, with no proxy.</p>
+
+  <h2>The problem</h2>
+  <p>Each call to <code>createServer()</code> binds to a port. If you have a website and a separately installed app (say, a chat service), running both means two ports — and usually a reverse proxy in front.</p>
+  <p><code>createRoutes()</code> solves this by separating route discovery from server creation. You build the second app's routes as a plain object, then pass them into your own <code>createServer()</code> call.</p>
+
+  <h2>How it works</h2>
+  <p>Without composition, the route table for a server is built internally from a single <code>pagesDir</code>. With <code>createRoutes()</code>, you build that table yourself and pass it in via the <code>routes</code> option — which is already supported by <code>createServer()</code> for explicit overrides.</p>
+  <p>The <code>prefix</code> option prepends a URL path to every discovered route, so the second app's pages live at <code>/chat/login</code>, <code>/chat/channels</code>, etc. and never collide with the host's routes.</p>
+
+  <h2>Basic example</h2>
+
+<pre><code>// server.js
+import { createServer, createRoutes } from '@devchitchat/index97'
+
+// Discover and prefix all routes from a second app's pages directory
+const chatRoutes = await createRoutes({
+  pagesDir: './node_modules/@devchitchat/chat/pages',
+  prefix: '/chat',
+  csp: "default-src 'self'; connect-src 'self' ws: wss:",
+})
+
+// Single server — your site at / and the chat app at /chat
+const server = await createServer({
+  pagesDir: './pages',
+  port: 3000,
+  routes: chatRoutes,
+  websocket: chatWebsocket,
+})</code></pre>
+
+  <h2>Serving a second app's static files</h2>
+  <p><code>createServer()</code>'s built-in static file handler only knows about its own <code>pagesDir/public/</code>. Static files from the second app's <code>public/</code> directory need to be registered as explicit routes:</p>
+
+<pre><code>const chatPublicDir = './node_modules/@devchitchat/chat/pages/public'
+
+const glob = new Bun.Glob('**/*')
+for await (const file of glob.scan({ cwd: chatPublicDir, onlyFiles: true })) {
+  chatRoutes['/chat/' + file] = () => new Response(Bun.file(chatPublicDir + '/' + file))
+}</code></pre>
+
+  <p>Pass those alongside the page routes in the <code>routes</code> option.</p>
+
+  <h2>Typical pattern: setup() + onServerReady()</h2>
+  <p>Well-designed composable apps export a <code>setup()</code> function that handles their own service wiring, returns pre-built routes, and accepts a callback to run once the server exists (e.g. to attach WebSocket publishing). This keeps all the plumbing inside the app package.</p>
+
+<pre><code>// server.js
+import { createServer } from '@devchitchat/index97'
+import { setup as setupChat } from '@devchitchat/chat'
+
+const chat = await setupChat({
+  basePath: '/chat',
+  dbPath: './data/chat.db',
+})
+
+const server = await createServer({
+  pagesDir: new URL('./pages', import.meta.url).pathname,
+  port: 3000,
+  routes: chat.routes,
+  websocket: chat.websocket,
+  onShutdown: (server) => { server.stop(); process.exit(0) },
+})
+
+chat.onServerReady(server)</code></pre>
+
+  <div class="callout">
+    <strong>What setup() returns.</strong> <code>routes</code> is the merged routes object (page routes + explicit protocol routes + static file routes, all prefixed). <code>websocket</code> is the Bun WebSocket handler. <code>onServerReady(server)</code> finalizes anything that needs a reference to the live server — like attaching a WebSocket publisher.
+  </div>
+
+  <h2>createRoutes() options</h2>
+
+  <table class="ref-table">
+    <thead>
+      <tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>pagesDir</td><td>string</td><td>—</td><td>Directory to discover routes from</td></tr>
+      <tr><td>prefix</td><td>string</td><td><code>""</code></td><td>URL prefix prepended to every route pattern (e.g. <code>/chat</code>)</td></tr>
+      <tr><td>dev</td><td>boolean</td><td><code>false</code></td><td>Inject HMR script into HTML responses</td></tr>
+      <tr><td>csp</td><td>string</td><td>default CSP</td><td>Content-Security-Policy header value for this app's routes</td></tr>
+      <tr><td>permissionsPolicy</td><td>string</td><td><code>camera=(), microphone=(), geolocation=()</code></td><td>Permissions-Policy header value for this app's routes</td></tr>
+      <tr><td>notFoundPage</td><td>string</td><td><code>null</code></td><td>Path to a custom 404 page</td></tr>
+    </tbody>
+  </table>
+
+  <p>Each app's routes carry their own security headers — the CSP and permissions policy you pass to <code>createRoutes()</code> apply only to that app's routes, independent of the host server's headers.</p>
+
+  <h2>What's not included in the returned routes</h2>
+  <ul>
+    <li><strong>Static files</strong> (<code>pagesDir/public/</code>) — served by <code>createServer()</code>'s fetch handler, which only knows its own public dir. Register them as explicit routes if needed (see above).</li>
+    <li><strong>WebSocket upgrade</strong> — add an explicit route for the WS endpoint alongside the returned routes.</li>
+    <li><strong>Protocol-specific routes</strong> (<code>/sw.js</code>, <code>/manifest.json</code>, etc.) — add these as explicit routes the same way.</li>
+  </ul>
+</div>

@@ -1,4 +1,4 @@
-export { createServer } from './src/server.js'
+export { createServer, createRoutes } from './src/server.js'
 export { render, escapeHtml } from './src/template.js'
 export { discoverRoutes } from './src/router.js'
 

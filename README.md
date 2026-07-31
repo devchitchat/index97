@@ -205,6 +205,62 @@ bunx index97 serve   # serves dist/ as a static site
 
 ---
 
+## Composing multiple apps on one port
+
+`createRoutes()` separates route discovery from server creation. Use it when you want to run two apps — say, a website and a chat service — on the same port without a proxy.
+
+```js
+// server.js
+import { createServer, createRoutes } from '@devchitchat/index97'
+
+// Build routes for a second app, prefixed at /chat
+const chatRoutes = await createRoutes({
+  pagesDir: './chat/pages',
+  prefix: '/chat',
+  csp: "default-src 'self'; connect-src 'self' ws: wss:",
+})
+
+// Add any explicit routes the second app needs
+chatRoutes['/chat/ws'] = (req, server) => {
+  if (server.upgrade(req)) return
+  return new Response('WebSocket upgrade required', { status: 426 })
+}
+
+// Single server — website at / and chat at /chat
+const server = await createServer({
+  pagesDir: './pages',
+  port: 3000,
+  routes: chatRoutes,          // merged in alongside the website's own routes
+  websocket: chatWebsocket,    // from the second app
+})
+```
+
+### `createRoutes(options)`
+
+Discovers routes from a `pagesDir` and returns a Bun-compatible routes object. All patterns are optionally prefixed so they don't collide with the host app's routes.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `pagesDir` | `string` | — | Directory to discover routes from |
+| `prefix` | `string` | `""` | URL prefix prepended to every route pattern |
+| `dev` | `boolean` | `false` | Inject HMR script into HTML responses |
+| `csp` | `string` | default CSP | Content-Security-Policy header value |
+| `permissionsPolicy` | `string` | `camera=(), microphone=(), geolocation=()` | Permissions-Policy header value |
+| `notFoundPage` | `string` | `null` | Path to a custom 404 page |
+
+The returned object is a plain `Record<string, Function>` — pass it directly to `createServer()` via the `routes` option, or spread it with other explicit routes before passing.
+
+Static files in `pagesDir/public/` are served by `createServer()`'s built-in `fetch` handler and are **not** included in the returned routes object. If the second app's static files need to be served under a prefix, register them as explicit routes:
+
+```js
+const glob = new Bun.Glob('**/*')
+for await (const file of glob.scan({ cwd: './chat/pages/public', onlyFiles: true })) {
+  chatRoutes['/chat/' + file] = () => new Response(Bun.file('./chat/pages/public/' + file))
+}
+```
+
+---
+
 ## CLI
 
 | Command | What it does |

@@ -98,28 +98,45 @@ function withErrorHandler(handler, pagesDir, dev, securityHeaders, notFoundPage)
   }
 }
 
-export async function createServer({
-  pagesDir = process.cwd(),
-  port = 3000,
-  dev = true,
+/**
+ * Discover routes from a pagesDir and return a Bun-compatible routes object,
+ * with all route patterns optionally prefixed.
+ *
+ * Use this when composing multiple apps into a single server: call createRoutes()
+ * for each app, merge the results, and pass them to createServer() via the
+ * routes option.
+ *
+ * @param {object} options
+ * @param {string}  options.pagesDir         - Directory to discover routes from
+ * @param {string}  [options.prefix]         - URL prefix to prepend to every route pattern (e.g. '/chat')
+ * @param {boolean} [options.dev]            - Enable dev mode (HMR injection)
+ * @param {string}  [options.csp]            - Content-Security-Policy header value
+ * @param {string}  [options.permissionsPolicy] - Permissions-Policy header value
+ * @param {string}  [options.notFoundPage]   - Path to a custom 404 page
+ * @returns {Promise<Record<string, Function>>} Bun route handlers keyed by URL pattern
+ */
+export async function createRoutes({
+  pagesDir,
+  prefix = '',
+  dev = false,
   csp,
   permissionsPolicy = 'camera=(), microphone=(), geolocation=()',
-  onShutdown = null,
   notFoundPage = null,
-  ...serveOptions
 } = {}) {
   const securityHeaders = buildSecurityHeaders(dev, { csp, permissionsPolicy })
   const routes = await discoverRoutes(pagesDir)
   const bunRoutes = {}
 
   for (const route of routes) {
+    const pattern = prefix + route.pattern
+
     if (route.kind === 'document') {
-      bunRoutes[route.pattern] = withErrorHandler(async () => {
+      bunRoutes[pattern] = withErrorHandler(async () => {
         const html = await Bun.file(route.filePath).text()
         return new Response(finalizeHtml(html, dev), { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
       }, pagesDir, dev, securityHeaders, notFoundPage)
     } else if (route.kind === 'page') {
-      bunRoutes[route.pattern] = withErrorHandler(async (req) => {
+      bunRoutes[pattern] = withErrorHandler(async (req) => {
         let html = await Bun.file(route.filePath).text()
         const jsPath = route.filePath.replace(/\.phtml$/, '.js')
         let data = {}
@@ -134,7 +151,7 @@ export async function createServer({
         return new Response(finalizeHtml(html, dev), { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
       }, pagesDir, dev, securityHeaders)
     } else if (route.kind === 'markdown') {
-      bunRoutes[route.pattern] = withErrorHandler(async (req) => {
+      bunRoutes[pattern] = withErrorHandler(async (req) => {
         const src = await Bun.file(route.filePath).text()
         const { html: body, data } = renderMarkdown(src)
         const layoutPath = await findLayout(route.filePath, pagesDir)
@@ -148,7 +165,7 @@ export async function createServer({
         return new Response(finalizeHtml(html, dev), { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
       }, pagesDir, dev, securityHeaders)
     } else if (route.kind === 'handler') {
-      bunRoutes[route.pattern] = withErrorHandler(async (req) => {
+      bunRoutes[pattern] = withErrorHandler(async (req) => {
         const { method, req: resolvedReq } = await resolveMethod(req)
         const mod = await import(route.filePath)
         if (!mod[method]) return new Response('Method Not Allowed', { status: 405 })
@@ -166,6 +183,22 @@ export async function createServer({
       }, pagesDir, dev, securityHeaders)
     }
   }
+
+  return bunRoutes
+}
+
+export async function createServer({
+  pagesDir = process.cwd(),
+  port = 3000,
+  dev = true,
+  csp,
+  permissionsPolicy = 'camera=(), microphone=(), geolocation=()',
+  onShutdown = null,
+  notFoundPage = null,
+  ...serveOptions
+} = {}) {
+  const securityHeaders = buildSecurityHeaders(dev, { csp, permissionsPolicy })
+  const bunRoutes = await createRoutes({ pagesDir, dev, csp, permissionsPolicy, notFoundPage })
 
   const { routes: extraRoutes = {}, ...restServeOptions } = serveOptions
 

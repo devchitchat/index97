@@ -135,6 +135,24 @@ export function data(req) {
     </tbody>
   </table>
 
+  <h2>Composing multiple apps</h2>
+  <p><code>createRoutes()</code> discovers routes from a <code>pagesDir</code> and returns a Bun-compatible routes object without creating a server. Use it to merge a second app's routes into your own <code>createServer()</code> call — one port, no proxy.</p>
+
+<pre><code>import { createServer, createRoutes } from '@devchitchat/index97'
+
+const chatRoutes = await createRoutes({
+  pagesDir: './node_modules/@devchitchat/chat/pages',
+  prefix: '/chat',
+})
+
+const server = await createServer({
+  pagesDir: './pages',
+  port: 3000,
+  routes: chatRoutes,
+})</code></pre>
+
+  <p>See <a href="/docs/composition">Composing apps</a> for the full guide including static files, WebSocket routes, and the <code>setup()</code> + <code>onServerReady()</code> pattern.</p>
+
   <h2>Hot reload (dev mode)</h2>
   <p>Enable with <code>dev: true</code> in <code>createServer()</code>. A file watcher broadcasts changes via SSE:</p>
   <ul>

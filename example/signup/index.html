@@ -8,8 +8,4 @@
   <noscript>JavaScript is required to load the signup form.</noscript>
 </div>
 
-<script>
-  fetch('/signup/form')
-    .then(r => r.text())
-    .then(html => { document.getElementById('signup-form').innerHTML = html })
-</script>
+<script src="/signup.js"></script>

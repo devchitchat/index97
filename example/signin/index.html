@@ -8,8 +8,4 @@
   <noscript>JavaScript is required to load the sign in form.</noscript>
 </div>
 
-<script>
-  fetch('/signin/form')
-    .then(r => r.text())
-    .then(html => { document.getElementById('signin-form').innerHTML = html })
-</script>
+<script src="/signin.js"></script>
