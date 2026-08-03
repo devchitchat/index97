@@ -90,6 +90,31 @@ function processEach(template, scope) {
   return result
 }
 
+function isTruthy(value) {
+  if (Array.isArray(value)) return value.length > 0
+  return !!value
+}
+
+// Split inner content at a top-level {{else}} (not inside a nested block)
+function splitAtElse(inner, openPrefix, closeTag) {
+  let depth = 0
+  let i = 0
+  while (i < inner.length) {
+    if (inner.startsWith(openPrefix, i)) {
+      depth++
+      i += openPrefix.length
+    } else if (inner.startsWith(closeTag, i)) {
+      depth--
+      i += closeTag.length
+    } else if (depth === 0 && inner.startsWith('{{else}}', i)) {
+      return [inner.slice(0, i), inner.slice(i + '{{else}}'.length)]
+    } else {
+      i++
+    }
+  }
+  return [inner, null]
+}
+
 function processConditional(template, openPrefix, closeTag, data, chain) {
   const scope = [...chain, data]
   let result = ''
@@ -145,10 +170,14 @@ function processConditional(template, openPrefix, closeTag, data, chain) {
 
     const inner = template.slice(bodyStart, matchEnd)
     const value = resolveWithChain(scope, keyPath)
-    const condition = openPrefix.startsWith('{{#unless') ? !value : value
+    const condition = openPrefix.startsWith('{{#unless') ? !isTruthy(value) : isTruthy(value)
+
+    const [ifBranch, elseBranch] = splitAtElse(inner, openPrefix, closeTag)
 
     if (condition) {
-      result += renderWithChain(inner, data, chain)
+      result += renderWithChain(ifBranch, data, chain)
+    } else if (elseBranch !== null) {
+      result += renderWithChain(elseBranch, data, chain)
     }
 
     pos = matchEnd + closeTag.length

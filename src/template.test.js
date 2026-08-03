@@ -172,3 +172,26 @@ test('render supports nested {{#unless}} blocks', () => {
   expect(render(tmpl, { closed: false, hidden: true })).toBe('outerend')
   expect(render(tmpl, { closed: true, hidden: false })).toBe('')
 })
+
+test('render renders {{else}} branch when {{#if}} condition is falsy', () => {
+  const tmpl = '{{#if show}}<p>yes</p>{{else}}<p>no</p>{{/if}}'
+  expect(render(tmpl, { show: false })).toBe('<p>no</p>')
+  expect(render(tmpl, { show: true })).toBe('<p>yes</p>')
+})
+
+test('render treats empty array as falsy in {{#if}}', () => {
+  const tmpl = '{{#if items}}<ul>items</ul>{{else}}<p>none</p>{{/if}}'
+  expect(render(tmpl, { items: [] })).toBe('<p>none</p>')
+  expect(render(tmpl, { items: [1] })).toBe('<ul>items</ul>')
+})
+
+test('render treats empty array as truthy in {{#unless}}', () => {
+  expect(render('{{#unless items}}none{{/unless}}', { items: [] })).toBe('none')
+  expect(render('{{#unless items}}none{{/unless}}', { items: [1] })).toBe('')
+})
+
+test('render {{else}} branch does not appear in truthy branch output', () => {
+  const tmpl = '{{#if ok}}A{{else}}B{{/if}}'
+  expect(render(tmpl, { ok: true })).toBe('A')
+  expect(render(tmpl, { ok: false })).toBe('B')
+})
