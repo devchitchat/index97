@@ -37,7 +37,9 @@
   "scripts": {
     "dev": "bun dev.js",
     "prof": "bun --cpu-prof --cpu-prof-md dev.js",
-    "test": "bun test"
+    "test": "bun test",
+    "docs:build": "bun build-docs.js",
+    "docs:build:github": "PATH_PREFIX=/index97/ bun build-docs.js"
   },
   "keywords": [
     "bun",
