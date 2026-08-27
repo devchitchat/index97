@@ -35,9 +35,9 @@ async function applyLayoutWithData(pageHtml, layoutPath, req) {
   return applyLayout(pageHtml, resolvedLayout)
 }
 
-function finalizeHtml(html, dev) {
+function finalizeHtml(html, dev, prefix = '') {
   html = rewriteFormMethods(html)
-  if (dev) html = injectHmrScript(html)
+  if (dev) html = injectHmrScript(html, prefix)
   return html
 }
 
@@ -133,7 +133,7 @@ export async function createRoutes({
     if (route.kind === 'document') {
       bunRoutes[pattern] = withErrorHandler(async () => {
         const html = await Bun.file(route.filePath).text()
-        return new Response(finalizeHtml(html, dev), { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+        return new Response(finalizeHtml(html, dev, prefix), { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
       }, pagesDir, dev, securityHeaders, notFoundPage)
     } else if (route.kind === 'page') {
       bunRoutes[pattern] = withErrorHandler(async (req) => {
@@ -148,7 +148,7 @@ export async function createRoutes({
         html = await resolveIncludes(html, data, pagesDir)
         const layoutPath = await findLayout(route.filePath, pagesDir)
         if (layoutPath) html = await applyLayoutWithData(html, layoutPath, req)
-        return new Response(finalizeHtml(html, dev), { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+        return new Response(finalizeHtml(html, dev, prefix), { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
       }, pagesDir, dev, securityHeaders)
     } else if (route.kind === 'markdown') {
       bunRoutes[pattern] = withErrorHandler(async (req) => {
@@ -162,7 +162,7 @@ export async function createRoutes({
             .join('')
           html = await applyLayoutWithData(slots + body, layoutPath, req)
         }
-        return new Response(finalizeHtml(html, dev), { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+        return new Response(finalizeHtml(html, dev, prefix), { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
       }, pagesDir, dev, securityHeaders)
     } else if (route.kind === 'handler') {
       bunRoutes[pattern] = withErrorHandler(async (req) => {
@@ -177,7 +177,7 @@ export async function createRoutes({
             const layoutPath = await findLayout(route.template, pagesDir)
             if (layoutPath) html = await applyLayoutWithData(html, layoutPath, req)
           }
-          return new Response(finalizeHtml(html, dev), { status: response.status, headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+          return new Response(finalizeHtml(html, dev, prefix), { status: response.status, headers: { 'Content-Type': 'text/html; charset=utf-8' } })
         }
         return response
       }, pagesDir, dev, securityHeaders)
@@ -191,19 +191,28 @@ export async function createServer({
   pagesDir = process.cwd(),
   port = 3000,
   dev = true,
+  prefix = '',
   csp,
   permissionsPolicy = 'camera=(), microphone=(), geolocation=()',
   onShutdown = null,
   notFoundPage = null,
   ...serveOptions
 } = {}) {
+  // Normalize once: trim any trailing '/' so we can concatenate safely, but
+  // keep '' for the "mounted at root" case. Consumers may pass '/foo' or '/foo/'.
+  const normPrefix = prefix.replace(/\/+$/, '')
   const securityHeaders = buildSecurityHeaders(dev, { csp, permissionsPolicy })
-  const bunRoutes = await createRoutes({ pagesDir, dev, csp, permissionsPolicy, notFoundPage })
+  const bunRoutes = await createRoutes({ pagesDir, prefix: normPrefix, dev, csp, permissionsPolicy, notFoundPage })
 
   const { routes: extraRoutes = {}, ...restServeOptions } = serveOptions
 
   const publicDir = path.join(pagesDir, 'public')
   const resolvedPublicBase = path.resolve(publicDir)
+
+  // Pre-computed HMR endpoints — always prefixed. hmr-client.js derives the
+  // matching base from its own script src, so both sides agree.
+  const hmrSsePath    = `${normPrefix}/__index97_hmr`
+  const hmrClientPath = `${normPrefix}/__index97_hmr_client.js`
 
   if (createServer._prevServer) {
     createServer._prevServer.stop(true)
@@ -217,19 +226,33 @@ export async function createServer({
     async fetch(req) {
       const url = new URL(req.url)
 
-      if (dev && url.pathname === '/__index97_hmr') {
+      if (dev && url.pathname === hmrSsePath) {
         return createSseResponse()
       }
 
-      if (dev && url.pathname === '/__index97_hmr_client.js') {
+      if (dev && url.pathname === hmrClientPath) {
         return new Response(hmrClientFile, { headers: { 'Content-Type': 'application/javascript' } })
       }
 
-      // Bounds-check public file path to prevent directory traversal
-      const resolvedPublicPath = path.resolve(path.join(publicDir, url.pathname))
-      if (resolvedPublicPath.startsWith(resolvedPublicBase + path.sep)) {
-        const publicFile = Bun.file(resolvedPublicPath)
-        if (await publicFile.exists()) return addSecurityHeaders(new Response(publicFile), securityHeaders)
+      // Strip prefix from url.pathname before joining with publicDir so that
+      // /todo-app/style.css → pages/public/style.css. Requests outside the
+      // prefix (or bare) fall through to the 404.
+      let publicRelative = url.pathname
+      if (normPrefix) {
+        if (publicRelative === normPrefix || publicRelative.startsWith(normPrefix + '/')) {
+          publicRelative = publicRelative.slice(normPrefix.length) || '/'
+        } else {
+          publicRelative = null
+        }
+      }
+
+      if (publicRelative != null) {
+        // Bounds-check public file path to prevent directory traversal
+        const resolvedPublicPath = path.resolve(path.join(publicDir, publicRelative))
+        if (resolvedPublicPath.startsWith(resolvedPublicBase + path.sep)) {
+          const publicFile = Bun.file(resolvedPublicPath)
+          if (await publicFile.exists()) return addSecurityHeaders(new Response(publicFile), securityHeaders)
+        }
       }
 
       return addSecurityHeaders(await resolveErrorResponse(404, 'Page not found', notFoundPage, pagesDir, dev), securityHeaders)

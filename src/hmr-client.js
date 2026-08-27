@@ -1,5 +1,12 @@
 (function(){
-  const es = new EventSource('/__index97_hmr')
+  // Derive the base prefix from this script's own src. When the app is
+  // mounted under a prefix (e.g. /todo-app), the injected tag will point at
+  // /todo-app/__index97_hmr_client.js, so this string is '/todo-app'. When
+  // mounted at root the src is /__index97_hmr_client.js and base is ''.
+  const scriptSrc = document.currentScript?.src ?? location.origin + '/__index97_hmr_client.js'
+  const base = new URL(scriptSrc).pathname.replace(/\/__index97_hmr_client\.js$/, '')
+
+  const es = new EventSource(base + '/__index97_hmr')
   es.onmessage = async (e) => {
     const { type } = JSON.parse(e.data)
     if (type === 'css') {
