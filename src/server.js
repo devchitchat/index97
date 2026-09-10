@@ -137,12 +137,13 @@ export async function createRoutes({
       }, pagesDir, dev, securityHeaders, notFoundPage)
     } else if (route.kind === 'page') {
       bunRoutes[pattern] = withErrorHandler(async (req) => {
+        req.basePath = prefix
         let html = await Bun.file(route.filePath).text()
         const jsPath = route.filePath.replace(/\.phtml$/, '.js')
         let data = {}
         if (await Bun.file(jsPath).exists()) {
           const mod = await import(jsPath)
-          if (mod.data) data = await mod.data(Object.fromEntries(new URL(req.url).searchParams))
+          if (mod.data) data = await mod.data(Object.fromEntries(new URL(req.url).searchParams), req)
         }
         html = render(html, data)
         html = await resolveIncludes(html, data, pagesDir)
@@ -166,7 +167,9 @@ export async function createRoutes({
       }, pagesDir, dev, securityHeaders)
     } else if (route.kind === 'handler') {
       bunRoutes[pattern] = withErrorHandler(async (req) => {
+        req.basePath = prefix
         const { method, req: resolvedReq } = await resolveMethod(req)
+        resolvedReq.basePath = prefix
         const mod = await import(route.filePath)
         if (!mod[method]) return new Response('Method Not Allowed', { status: 405 })
         const { response, data } = await dispatch(mod[method], resolvedReq, route)

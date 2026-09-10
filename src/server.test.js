@@ -1,5 +1,5 @@
 import { test, expect, beforeAll, afterAll } from 'bun:test'
-import { createServer } from './server.js'
+import { createServer, createRoutes } from './server.js'
 import path from 'node:path'
 import { mkdirSync, rmSync } from 'node:fs'
 
@@ -127,5 +127,51 @@ test('createServer uses notFoundPage option when provided', async () => {
   expect(res.status).toBe(404)
   expect(res.headers.get('Content-Type')).toContain('text/html')
   expect(await res.text()).toContain('Custom 404 page')
+  server.stop()
+})
+
+test('createRoutes stamps req.basePath on handler routes', async () => {
+  const dir = path.join(FIXTURES, 'basepath-handler')
+  mkdirSync(dir, { recursive: true })
+  await Bun.write(path.join(dir, 'info.js'), `export function GET(req) {
+    return new Response(req.basePath ?? 'MISSING')
+  }`)
+  const routes = await createRoutes({ pagesDir: dir, prefix: '/app', dev: false })
+  const server = Bun.serve({ port: 0, routes })
+  const res = await fetch(`http://localhost:${server.port}/app/info`)
+  expect(await res.text()).toBe('/app')
+  server.stop()
+})
+
+test('createRoutes stamps req.basePath on handler routes after method override', async () => {
+  const dir = path.join(FIXTURES, 'basepath-override')
+  mkdirSync(dir, { recursive: true })
+  await Bun.write(path.join(dir, 'item.js'), `export function DELETE(req) {
+    return new Response(req.basePath ?? 'MISSING')
+  }`)
+  const routes = await createRoutes({ pagesDir: dir, prefix: '/app', dev: false })
+  const server = Bun.serve({ port: 0, routes })
+  const body = new URLSearchParams({ _method: 'DELETE' }).toString()
+  const res = await fetch(`http://localhost:${server.port}/app/item`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+  })
+  expect(await res.text()).toBe('/app')
+  server.stop()
+})
+
+test('createRoutes stamps req.basePath on page routes and passes req to layout data', async () => {
+  const dir = path.join(FIXTURES, 'basepath-page')
+  mkdirSync(dir, { recursive: true })
+  await Bun.write(path.join(dir, 'index.phtml'), '<p>page</p>')
+  await Bun.write(path.join(dir, '_layout.html'), '<div id="base">{{base}}</div>{{content}}')
+  await Bun.write(path.join(dir, '_layout.js'), `export function data(req) {
+    return { base: req.basePath ?? 'MISSING' }
+  }`)
+  const routes = await createRoutes({ pagesDir: dir, prefix: '/blog', dev: false })
+  const server = Bun.serve({ port: 0, routes })
+  const res = await fetch(`http://localhost:${server.port}/blog/`)
+  expect(await res.text()).toContain('<div id="base">/blog</div>')
   server.stop()
 })
