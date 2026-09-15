@@ -16,10 +16,15 @@
       })
       return
     }
-    const res = await fetch(location.href)
-    const html = await res.text()
-    const next = new DOMParser().parseFromString(html, 'text/html')
-    morph(document.documentElement, next.documentElement)
+    try {
+      const res = await fetch(location.href)
+      const html = await res.text()
+      const next = new DOMParser().parseFromString(html, 'text/html')
+      morph(document.documentElement, next.documentElement)
+    } catch (err) {
+      console.warn('[HMR] DOM morph failed, falling back to full reload:', err)
+      location.reload()
+    }
   }
 
   function morph(oldNode, newNode) {
@@ -42,7 +47,7 @@
       if (oldChild.textContent !== newChild.textContent) oldChild.textContent = newChild.textContent
       return
     }
-    patchAttrs(oldChild, newChild)
+    if (oldChild.nodeType === 1) patchAttrs(oldChild, newChild)
     morph(oldChild, newChild)
   }
 
