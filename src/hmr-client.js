@@ -52,10 +52,13 @@
   }
 
   function patchAttrs(oldEl, newEl) {
-    for (const { name } of [...oldEl.attributes]) {
+    const oldAttrs = oldEl.attributes
+    const newAttrs = newEl.attributes
+    if (!oldAttrs || !newAttrs) return
+    for (const { name } of [...oldAttrs]) {
       if (!newEl.hasAttribute(name)) oldEl.removeAttribute(name)
     }
-    for (const { name, value } of newEl.attributes) {
+    for (const { name, value } of newAttrs) {
       if (oldEl.getAttribute(name) !== value) oldEl.setAttribute(name, value)
     }
   }

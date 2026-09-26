@@ -18,8 +18,7 @@ Default to using Bun instead of Node.js.
 - No need to write tests that just assert that a css style is in the file.
 - TDD is for applicatoin behavior.
 - Write unit tests to assert correctness of functions and methods.
-- Leverage JSDOM to write test for the UI.
-- When writing UI tests, load the actual HTML for the test when using JSDOM.
+- Leverage happy-dom to write tests for the UI. Use `new Window()` from `happy-dom` directly — do not use `@happy-dom/global-registrator`.
 
 ## APIs
 
